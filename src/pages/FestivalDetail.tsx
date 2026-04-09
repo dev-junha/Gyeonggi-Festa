@@ -1,0 +1,261 @@
+import { useEffect, useState } from "react";
+import styles from "./css/FestivalDetail.module.css";
+import FestivalInfo from "../components/FestivalInfo";
+import FestivalDescription from "../components/FestivalDescription";
+import FestivalMap from "../components/FestivalMap";
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import axiosInstance from "../api/axiosInstance";
+import ReviewSection from "../components/ReviewSection";
+import useFestivalStore from "../store/useFestivalStore";
+import CommentSection from "../components/CommentSection";
+import { useRef } from "react"; // 스크롤 이동용
+import { motion } from 'framer-motion';
+import BottomNav from "../components/BottomNav";
+
+const getStatus = (start: string, end: string) => {
+  const today = new Date();
+  const startDate = new Date(start);
+  const endDate = new Date(end);
+
+  if (today < startDate) return { text: "예정", color: "#00A859" };
+  if (today > endDate) return { text: "마감", color: "#888888" };
+  return { text: "진행중", color: "#0900FF" };
+};
+
+export default function FestivalDetail() {
+  const [searchParams] = useSearchParams();
+  const reviewSectionRef = useRef<HTMLDivElement>(null);
+  const commentSectionRef = useRef<HTMLDivElement>(null);
+  const [showMoreOptions, setShowMoreOptions] = useState(false);
+  const eventId = searchParams.get("eventId");
+  const { setEventId, setEventData } = useFestivalStore();
+  const [data, setData] = useState<any>();
+  const [liked, setLiked] = useState(false);
+  const [favorited, setFavorited] = useState(false);
+  const navigate = useNavigate();
+  const [likeAnimation, setLikeAnimation] = useState(false);
+  const [favoriteAnimation, setFavoriteAnimation] = useState(false);
+  const [locationData, setLocationData] = useState<{
+    latitude: number;
+    longitude: number;
+    roadAddress: string;
+  } | null>(null);
+  const copyToClipboard = () => {
+    if (!data?.orgLink) return alert('복사할 링크가 없습니다.');
+    navigator.clipboard.writeText(data.orgLink)
+      .then(() => alert("링크가 복사되었습니다!"))
+      .catch(() => alert("클립보드 복사에 실패했습니다."));
+  };
+
+  const scrollToReview = () => {
+    reviewSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const scrollToComment = () => {
+    commentSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+  useEffect(() => {
+    if (!eventId) return;
+    setEventId(eventId);
+
+    const fetchFestivalDetail = async () => {
+      try {
+        const response = await axiosInstance.get(`/api/auth/user/event/${eventId}`);
+        const eventData = response.data.data;
+        
+        setData(eventData);
+        setEventData(eventData);
+        console.log("eventData",eventData)
+      } catch (error) {
+        console.error("행사 상세 정보를 불러오지 못했습니다:", error);
+      }
+    };
+
+    fetchFestivalDetail();
+  }, [eventId, setEventId, setEventData]);
+
+  useEffect(() => {
+    if (data) {
+      setLiked(data.liked === true); // liked 필드로 좋아요 상태 확인
+      setFavorited(data.favorite === true); // favorite 필드로 즐겨찾기 상태 확인
+      
+      // data에서 직접 위치 정보 가져오기
+      if (data.latitude && data.longitude) {
+        setLocationData({
+          latitude: data.latitude,
+          longitude: data.longitude,
+          roadAddress: data.roadAddress || '',
+        });
+      }
+    }
+  }, [data]);
+  
+  
+
+  if (!data) return <div>로딩 중...</div>;
+
+  const status = getStatus(data.startDate, data.endDate);
+
+  const detailInfo = {
+    location: data.roadAddress || "정보 없음",
+    date: `${data.startDate.replace(/-/g, ".")} ~ ${data.endDate.replace(/-/g, ".")}`,
+    fee: data.useFee || (data.isFree === "Y" ? "무료" : "유료"),
+    people: "정보 없음", // useTarget 필드 없음
+    mask: "정보 없음", // player 필드 없음
+    buliding: data.orgName || "기관 정보 없음", // orgName은 optional이므로 그대로 유지
+  };
+
+  const toggleLike = async () => {
+    try {
+      if (liked) {
+        await axiosInstance.delete(`/api/auth/user/event/like/${eventId}`);
+      } else {
+        await axiosInstance.post(`/api/auth/user/event/like/${eventId}`);
+      }
+      setLiked(!liked);
+      setLikeAnimation(true);
+      setTimeout(() => setLikeAnimation(false), 300); // 애니메이션 지속 시간
+    } catch (error) {
+      console.error("좋아요 처리 실패:", error);
+    }
+  };
+
+  const toggleFavorite = async () => {
+    try {
+      if (favorited) {
+        await axiosInstance.delete(`/api/auth/user/event/favorite/${eventId}`);
+      } else {
+        await axiosInstance.post(`/api/auth/user/event/favorite/${eventId}`);
+      }
+      setFavorited(!favorited);
+      setFavoriteAnimation(true);
+      setTimeout(() => setFavoriteAnimation(false), 300);
+    } catch (error) {
+      console.error("즐겨찾기 처리 실패:", error);
+    }
+  };
+
+  return (
+    <motion.div className={styles.container} initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.5 }}>
+      <div className={styles.header}>
+        <img
+          src="/assets/back.svg"
+          alt="Back"
+          onClick={() => navigate('/mainpage')}
+          className={styles.backIcon}
+        />
+        <div className={styles.moreContainer}>
+          <img
+            src={showMoreOptions ? "/assets/x.svg" : "/assets/more.svg"} // ✅ 아이콘 조건부 변경
+            alt="More"
+            onClick={() => setShowMoreOptions((prev) => !prev)}
+            className={styles.moreIcon}
+          />
+
+          {showMoreOptions && (
+            <div className={styles.moreDropdown}>
+              <div onClick={() => navigate(`/fest/detail/review/write?eventId=${eventId}`)}>리뷰 작성하기</div>
+              <div onClick={scrollToReview}>리뷰 보러가기</div>
+              <div onClick={scrollToComment}>댓글로 가기</div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <p className={styles.subtitle}>{data.category}</p>
+      <h1 className={styles.title}>{data.title}</h1>
+
+      <div className={styles.locationInfoRow}>
+        <img src="/assets/detail/map.svg" alt="Map Icon" className={styles.mapIcon} />
+        <span className={styles.locationText}>
+          {data.roadAddress || "주소 정보 없음"}
+        </span>
+        {data.rating > 0 ? (
+          <>
+            <img src="/assets/FestivalCard/star-mini.svg" alt="평점" />
+            <span style={{ color: '#FFB200' }}>{data.rating.toFixed(1)}</span>
+          </>
+        ) : (
+          <span style={{ color: '#999', fontSize: '12px' }}>평점 없음</span>
+        )}
+        <img src="/assets/FestivalCard/heart-mini.svg" alt="좋아요" />
+        <span style={{ color: '#CC4E00' }}>{data.likes || 0}</span>
+      </div>
+
+      <div className={styles.dateRow}>
+        <span className={styles.date}>
+          {data.startDate.replace(/-/g, ".")} ~ {data.endDate.replace(/-/g, ".")}
+        </span>
+        <span
+          className={styles.status}
+          style={{
+            color: status.color,
+            border: `1px solid ${status.color}`,
+            fontWeight: "bold",
+            borderRadius: "99px",
+            padding: "4px 12px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {status.text}
+        </span>
+      </div>
+
+      <div className={styles.iconContainer}>
+        <motion.img
+          src={liked ? "/assets/hart-fill.svg" : "/assets/hart.svg"}
+          alt="Heart Icon"
+          onClick={toggleLike}
+          className={styles.icon}
+          animate={likeAnimation ? { scale: [1, 1.3, 1] } : {}}
+          transition={{ duration: 0.4 }}
+        />
+
+        <motion.img
+          src={favorited ? "/assets/star-fill.svg" : "/assets/star.svg"}
+          alt="Star Icon"
+          onClick={toggleFavorite}
+          className={styles.icon}
+          animate={favoriteAnimation ? { scale: [1, 1.3, 1] } : {}}
+          transition={{ duration: 0.4 }}
+        />
+
+
+        <img
+          src="/assets/send.svg"
+          alt="Send Icon"
+          onClick={copyToClipboard}
+          className={styles.icon}
+        />
+
+      </div>
+
+      <div className={styles.websiteImage}>
+        <img src={data.mainImg} alt="Festival Cover" />
+      </div>
+
+      <FestivalInfo values={detailInfo} />
+      {locationData && (
+        <FestivalMap
+          lat={locationData.latitude}
+          lng={locationData.longitude}
+          roadAddress={locationData.roadAddress}
+          orgName={data.orgName}
+        />
+      )}
+      <FestivalDescription content={data.timeInfo || "등록된 시간 정보가 없습니다."} />
+      <div ref={commentSectionRef}>
+        <CommentSection eventId={eventId!} />
+      </div>
+      <div ref={reviewSectionRef}>
+        <ReviewSection eventId={eventId!} />
+        
+      </div>
+      <BottomNav/>
+    </motion.div>
+  );
+}

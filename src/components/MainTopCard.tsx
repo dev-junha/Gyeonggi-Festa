@@ -46,7 +46,7 @@ const MainTopCard: React.FC = () => {
           return arr.map((item: any) => ({
             eventId: item.eventId,
             mainText: item.title,
-            subText: `${item.category} | ${item.guName}`,
+            subText: `${item.category} | ${item.isFree === "Y" ? "무료" : "유료"}`,
             imageUrl: item.mainImg || '/assets/default-card.jpg',
           }));
         },
@@ -69,7 +69,7 @@ const MainTopCard: React.FC = () => {
           return content.map((item: any) => ({
             eventId: item.eventId,
             mainText: item.title,
-            subText: `${item.category} | ${item.guName}`,
+            subText: `${item.category} | ${item.isFree === "Y" ? "무료" : "유료"}`,
             imageUrl: item.mainImg || '/assets/default-card.jpg',
           }));
         },
@@ -100,9 +100,10 @@ const MainTopCard: React.FC = () => {
                   <div
                     className={styles.cardWrapper}
                     style={{
-                      backgroundImage: `url(${item.imageUrl})`,
+                      backgroundImage: item.imageUrl ? `url("${item.imageUrl}")` : 'none',
                       backgroundSize: 'cover',
                       backgroundPosition: 'center',
+                      backgroundColor: item.imageUrl ? 'transparent' : '#f0f0f0',
                     }}
                     onClick={() => navigate(`/fest/detail?eventId=${item.eventId}`)}
                   >

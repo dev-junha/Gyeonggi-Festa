@@ -1,0 +1,41 @@
+.container {
+    background-color: white;
+    padding: 16px;
+    margin-bottom: 40px;
+  }
+  
+  .direction {
+    font-weight: 700;
+    font-size: 16px;
+    color: black;
+    text-align: left;
+    margin-bottom: 8px;
+  }
+
+  .address {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .parkingBox {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-top: 12px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  
+  .parkingBox img:first-child {
+    margin-right: 8px;
+  }
+  
+  .parkingBox img:last-child {
+    margin-left: auto;
+  }
+  

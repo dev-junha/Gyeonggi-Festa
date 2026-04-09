@@ -13,16 +13,21 @@ interface EventType {
   eventId: number;
   category: string;
   title: string;
-  guName: string;
+  isFree: string;
   startDate: string;
   endDate: string;
   status: 'NOT_STARTED' | 'IN_PROGRESS' | 'ENDED';
   mainImg:string;
+  roadAddress?: string;
 }
 const formatDate = (date: Date): string =>
   date.toISOString().split('T')[0];
 
-const UpcomingEvents: React.FC = () => {
+interface UpcomingEventsProps {
+  onDateSelect?: (date: Date) => void;
+}
+
+const UpcomingEvents: React.FC<UpcomingEventsProps> = ({ onDateSelect }) => {
   const today = useMemo(() => new Date(), []);
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState(today);
@@ -61,10 +66,14 @@ const UpcomingEvents: React.FC = () => {
     [filteredEvents, visibleCount]
   );
 
-  const onDateSelect = useCallback((date: Date) => {
+  const handleDateSelect = useCallback((date: Date) => {
     setSelectedDate(date);
     setVisibleCount(3);
-  }, []);
+    // 부모 컴포넌트에 날짜 변경 알림
+    if (onDateSelect) {
+      onDateSelect(date);
+    }
+  }, [onDateSelect]);
 
   const handleEventClick = useCallback(
     (eventId: number) => {
@@ -92,7 +101,7 @@ const UpcomingEvents: React.FC = () => {
           return (
             <DateButton
               key={date.toDateString()}
-              onClick={() => onDateSelect(date)}
+              onClick={() => handleDateSelect(date)}
               selected={isSelected}
             >
               <DayLabel>{DAYS_KR[date.getDay()]}</DayLabel>
@@ -108,7 +117,7 @@ const UpcomingEvents: React.FC = () => {
             key={event.eventId}
             category={event.category}
             title={event.title}
-            location={event.guName}
+            location={event.roadAddress || "주소 정보 없음"}
             dateRange={`${event.startDate} ~ ${event.endDate}`}
             mainImg={event.mainImg}
             eventId={event.eventId}

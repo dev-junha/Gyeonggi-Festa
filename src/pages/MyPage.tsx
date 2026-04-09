@@ -20,22 +20,22 @@ const MyPage = () => {
     const fetchUserInfo = async () => {
       try {
         const res = await axiosInstance.get('/api/auth/user/info');
-        const { username, email, gender, birthday } = res.data.data;
-        const [year, month, day] = birthday.split('-');
+        const { username, email, gender } = res.data.data;
 
         setUserInfo({
           nickname: username,
           email,
           gender,
-          birth: { year, month, day },
+          birth: { year: '', month: '', day: '' },
         });
       } catch (err) {
         console.error('유저 정보 불러오기 실패', err);
+
       }
     };
 
     fetchUserInfo();
-  }, []);
+  }, [setUserInfo]);
 
   return (
     <motion.div
@@ -45,7 +45,7 @@ const MyPage = () => {
       transition={{ duration: 0.5 }}
     >
       <p className={styles.welcome}>
-        {nickname}님,
+        {nickname}님, 
         <br />
         반갑습니다.
       </p>
@@ -79,6 +79,16 @@ const MyPage = () => {
           onClick={() => navigate('/scrap')}
         >
           <span>스크랩한 행사</span>
+          <img src="/assets/detail/slash.svg" alt="arrow" />
+        </motion.div>
+
+        <motion.div
+          className={styles.item}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => navigate('/liked')}
+        >
+          <span>좋아요한 행사</span>
           <img src="/assets/detail/slash.svg" alt="arrow" />
         </motion.div>
 

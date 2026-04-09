@@ -10,17 +10,23 @@ const navItems = [
     activeIcon: '/assets/home-active.svg',
     path: '/mainpage',
   },
+    {
+    label: '검색',
+    icon: '/assets/search-bottom.svg',
+    activeIcon: '/assets/search-active.svg',
+    path: '/fest/all',
+  },
+  {
+    label: '모임팟',
+    icon: '/assets/meeting.svg',
+    activeIcon: '/assets/meeting-active.svg',
+    path: '/meetingpot',
+  },
   {
     label: '채팅',
     icon: '/assets/chat.svg',
     activeIcon: '/assets/chat-active.svg',
     path: '/chat',
-  },
-  {
-    label: '검색',
-    icon: '/assets/search-bottom.svg',
-    activeIcon: '/assets/search-active.svg',
-    path: '/fest/all',
   },
   {
     label: '마이페이지',
